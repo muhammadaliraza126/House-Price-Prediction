@@ -54,3 +54,27 @@ class QualityTests(unittest.TestCase):
             result = subprocess.run([sys.executable, str(ROOT/'tools/csv_quality.py'), str(source), '--output', str(source)], capture_output=True)
             self.assertEqual(result.returncode, 2)
             self.assertEqual(source.read_bytes(), before)
+
+
+    def test_report_creation_and_existing_file_protection(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            source = Path(tmp) / 'input.csv'
+            source.write_text('a,b\n1,2\n')
+            output = Path(tmp) / 'nested' / 'report.json'
+            command = [sys.executable, str(ROOT/'tools/csv_quality.py'), str(source), '--output', str(output)]
+            result = subprocess.run(command, capture_output=True, text=True)
+            self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertEqual(json.loads(result.stdout), json.loads(output.read_text()))
+            before = output.read_bytes()
+            result = subprocess.run(command, capture_output=True, text=True)
+            self.assertEqual(result.returncode, 2)
+            self.assertEqual(output.read_bytes(), before)
+
+    def test_bad_quotes_and_invalid_utf8_exit_cleanly(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            source = Path(tmp) / 'input.csv'
+            for data in [b'a,b\n"unclosed,2\n', b'a\n\xff\n']:
+                source.write_bytes(data)
+                result = subprocess.run([sys.executable, str(ROOT/'tools/csv_quality.py'), str(source)], capture_output=True, text=True)
+                self.assertEqual(result.returncode, 2)
+                self.assertNotIn('Traceback', result.stderr)
