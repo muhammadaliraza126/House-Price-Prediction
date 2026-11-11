@@ -20,6 +20,15 @@ python -m unittest discover -s tests -v
 
 No API key, paid service or dataset download is required.
 
+## Included CSV example
+Run this from the repository directory after installing requirements:
+```bash
+python houseprice.py --csv examples/houses_synthetic.csv --output reports/example.json
+```
+The included CSV contains 100 synthetic rows generated with `demo_data(n=100, seed=42)` and rounded to two decimals. It contains no real property records. The run uses 80 training rows and 20 test rows. The report labels any CSV input `user_csv`; this example remains synthetic.
+
+See [the walkthrough](examples/README.md) for interpreting results and fixing common errors.
+
 ## Use your own CSV
 ```bash
 python houseprice.py --csv data/houses.csv --output reports/houses.json
@@ -56,3 +65,4 @@ This project is developed with AI assistance. Changes should be reviewed and tes
 
 ## License
 MIT; see [LICENSE](LICENSE).
+
