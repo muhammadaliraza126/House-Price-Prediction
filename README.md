@@ -55,6 +55,13 @@ Synthetic data follows a mostly linear formula, so good demo scores are expected
 - No XGBoost, dashboard, deployed API or production valuation claims.
 - Dependencies have bounded compatible ranges; these are not a fully locked environment.
 
+## CSV quality companion
+Check a CSV before modeling with the standalone [CSV Data Quality Checker](tools/README.md). It detects blank cells, duplicates, malformed records and optional numeric errors without extra dependencies.
+
+```bash
+python tools/csv_quality.py examples/houses_synthetic.csv --numeric size_sqft bedrooms age_years price_usd
+```
+
 ## Contribute
 See [CONTRIBUTING.md](CONTRIBUTING.md). Bug reports should include a small synthetic example and the command that failed.
 
