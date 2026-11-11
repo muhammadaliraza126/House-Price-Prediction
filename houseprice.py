@@ -1,41 +1,83 @@
-
-# House Price Prediction - Simple Linear Regression
-
+"""Reproducible educational housing regression; synthetic demo, not a valuation service."""
+import argparse
+import json
+from pathlib import Path
 import numpy as np
 import pandas as pd
+from sklearn.dummy import DummyRegressor
 from sklearn.linear_model import LinearRegression
+from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
 from sklearn.model_selection import train_test_split
-from sklearn.metrics import mean_squared_error, r2_score
 
-# 1. Sample Data Generation (Replace this with your actual dataset)
-# For demonstration, we use some dummy features: [Size (sq ft), Bedrooms, Age of House (years)]
-X = np.array([
-    [1500, 3, 5],
-    [1800, 4, 10],
-    [2400, 3, 2],
-    [3000, 4, 15],
-    [1200, 2, 8]
-])
+FEATURES = ["size_sqft", "bedrooms", "age_years"]
+TARGET = "price_usd"
 
-# Target variable: House Prices (in thousands of dollars)
-y = np.array([300, 400, 500, 600, 250])
+def demo_data(n=500, seed=42):
+    rng = np.random.default_rng(seed)
+    data = pd.DataFrame({
+        "size_sqft": rng.uniform(600, 4000, n),
+        "bedrooms": rng.integers(1, 7, n),
+        "age_years": rng.integers(0, 100, n),
+    })
+    data[TARGET] = (60000 + 180 * data.size_sqft + 12000 * data.bedrooms
+                    - 700 * data.age_years + rng.normal(0, 25000, n)).clip(10000)
+    return data
 
-# 2. Split the data into training and testing sets
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+def validate(data):
+    missing = sorted(set(FEATURES + [TARGET]) - set(data.columns))
+    if missing:
+        raise ValueError("Missing columns: " + ", ".join(missing))
+    clean = data[FEATURES + [TARGET]].apply(pd.to_numeric, errors="raise")
+    if len(clean) < 20:
+        raise ValueError("At least 20 rows are required for a train/test split.")
+    if not np.isfinite(clean.to_numpy()).all():
+        raise ValueError("Missing or infinite values are not allowed.")
+    if (clean[["size_sqft", "bedrooms", TARGET]] <= 0).any().any():
+        raise ValueError("Size, bedrooms and price must be positive.")
+    if (clean.age_years < 0).any():
+        raise ValueError("Age must be nonnegative.")
+    if not (clean.bedrooms % 1 == 0).all():
+        raise ValueError("Bedrooms must be whole numbers.")
+    if clean.duplicated().any():
+        raise ValueError("Duplicate rows may leak between train/test sets; remove them first.")
+    if clean[TARGET].nunique() < 2:
+        raise ValueError("Prices must vary.")
+    return clean
 
-# 3. Initialize and train the model
-model = LinearRegression()
-model.fit(X_train, y_train)
+def evaluate(data, seed=42):
+    clean = validate(data)
+    x_train, x_test, y_train, y_test = train_test_split(
+        clean[FEATURES], clean[TARGET], test_size=0.2, random_state=seed)
+    if y_test.nunique() < 2:
+        raise ValueError("Test prices must vary to calculate meaningful R2.")
+    report = {"train_rows": len(x_train), "test_rows": len(x_test), "seed": seed, "models": {}}
+    for name, model in [("mean_baseline", DummyRegressor()), ("linear_regression", LinearRegression())]:
+        model.fit(x_train, y_train)
+        prediction = model.predict(x_test)
+        report["models"][name] = {
+            "mae_usd": float(mean_absolute_error(y_test, prediction)),
+            "rmse_usd": float(np.sqrt(mean_squared_error(y_test, prediction))),
+            "r2": float(r2_score(y_test, prediction)),
+        }
+    return report
 
-# 4. Make predictions using the test set
-y_pred = model.predict(X_test)
+def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--csv", type=Path, help="CSV with size_sqft, bedrooms, age_years, price_usd")
+    parser.add_argument("--output", type=Path, help="Save a JSON report")
+    parser.add_argument("--seed", type=int, default=42)
+    args = parser.parse_args()
+    try:
+        data = pd.read_csv(args.csv) if args.csv else demo_data(seed=args.seed)
+        report = evaluate(data, args.seed)
+        report["data_source"] = "user_csv" if args.csv else "synthetic_demo"
+        result = json.dumps(report, indent=2, allow_nan=False)
+        if args.output:
+            args.output.parent.mkdir(parents=True, exist_ok=True)
+            args.output.write_text(result + "\n", encoding="utf-8")
+        print(result)
+    except (ValueError, OSError) as exc:
+        parser.error(str(exc))
 
-# 5. Evaluate the model
-print("--- Model Performance ---")
-print("Mean Squared Error (MSE):", mean_squared_error(y_test, y_pred))
-print("Coefficient of Determination (R^2 Score):", r2_score(y_test, y_pred))
-
-# 6. Example prediction for a new house
-new_house = np.array([[1600, 3, 4]]) # 1600 sq ft, 3 bedrooms, 4 years old
-predicted_price = model.predict(new_house)
-print(f"\nPredicted Price for a new house (1600 sq ft, 3 beds, 4 years old): ${predicted_price[0]*1000:,.2f}")
+if __name__ == "__main__":
+    main()

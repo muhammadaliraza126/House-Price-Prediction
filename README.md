@@ -1,51 +1,58 @@
-# 🏡 House Price Prediction Machine Learning Project
+# House Price Prediction
+A small, reproducible Python regression project with input validation, a held-out test set and a mean-price baseline.
 
-This repository contains a complete end-to-end Machine Learning project to predict house prices using advanced regression techniques. The project covers data preprocessing, exploratory data analysis (EDA), feature engineering, and model training.
+**Status:** educational prototype. The default 500-row dataset is synthetic, generated locally. Results are not evidence of real housing-market accuracy.
 
-## 📌 Project Overview
-Buying a house is one of the most significant financial decisions a person makes. Predicting housing prices accurately helps buyers make informed decisions and assists real estate agents in setting appropriate prices. This project leverages historical data and machine learning algorithms to build a robust predictive model.
+## Quick start
+Requires Python 3.10 or later.
 
-## 🚀 Key Features
-- **Data Preprocessing:** Handling missing values, encoding categorical variables, and removing outliers.
-- **Exploratory Data Analysis (EDA):** Visualizing data distributions and correlations using Seaborn and Matplotlib.
-- **Feature Engineering:** Creating new meaningful features to improve model performance.
-- **Model Training:** Implementing various regression algorithms like Linear Regression, Random Forest, and XGBoost.
-- **Model Evaluation:** Assessing model performance using metrics such as R-squared, MAE, and RMSE.
-
-## 🛠 Technologies Used
-- **Language:** Python
-- **Libraries:** Pandas, NumPy, Scikit-Learn, Matplotlib, Seaborn
-
-## 📊 Dataset
-The project utilizes a comprehensive dataset featuring various attributes of residential properties, including:
-- Location/Neighborhood
-- Square footage of living area
-- Number of bedrooms and bathrooms
-- Year built and renovated
-- Overall quality and condition scores
-
-## ⚙️ Installation
-To run this project locally on your machine, follow these steps:
-
-1. Clone the repository:
-   ```bash
-   git clone https://github.com/muhammadaliraza126/House-Price-Prediction.git
-   ```
-2. Navigate to the project directory:
-   ```bash
-   cd House-Price-Prediction
-   ```
-3. Install the required libraries:
-   ```bash
-   pip install -r requirements.txt
-   ```
-
-## 📈 Usage
-Explain how to run the project code (e.g., running the Jupyter notebook or executing the main Python script).
-
-## 🏆 Model Results
-Mention the final accuracy or evaluation metrics achieved by your best-performing model here.
-
-## 🤝 Contributing
-Contributions, issues, and feature requests are welcome! Feel free to open an issue or submit a pull request.
+```bash
+git clone https://github.com/muhammadaliraza126/House-Price-Prediction.git
+cd House-Price-Prediction
+python -m venv .venv
+# Linux/macOS: source .venv/bin/activate
+# Windows PowerShell: .venv\Scripts\Activate.ps1
+python -m pip install -r requirements.txt
+python houseprice.py
+python houseprice.py --output reports/demo.json
+python -m unittest discover -s tests -v
 ```
+
+No API key, paid service or dataset download is required.
+
+## Use your own CSV
+```bash
+python houseprice.py --csv data/houses.csv --output reports/houses.json
+```
+
+| Column | Meaning | Validation |
+| --- | --- | --- |
+| size_sqft | Floor area, square feet | Positive finite number |
+| bedrooms | Bedroom count | Positive whole number |
+| age_years | Property age, years | Nonnegative finite number |
+| price_usd | Sale price in US dollars | Positive finite number |
+
+Provide at least 20 complete, unique rows with varying prices. Missing columns, nonnumeric values, missing/infinite values, invalid ranges and duplicate rows are rejected. Extra columns are ignored.
+
+## Evaluation
+An 80/20 split uses a fixed seed (default 42). Both models are fitted only on training rows. The JSON report contains sample counts, data source, seed, MAE and RMSE in USD, and R² for linear regression and the training-mean baseline. Lower MAE/RMSE is better; R² can be negative.
+
+Synthetic data follows a mostly linear formula, so good demo scores are expected. R² is not a percentage accuracy guarantee. Run the script to obtain actual results in your environment.
+
+## Limitations
+- No location features, market trends, inflation adjustment or uncertainty intervals.
+- Random splitting is suitable for this synthetic demo; real transactions may require temporal or property-group splits to avoid leakage.
+- Similar properties can leak information even when exact duplicate rows are removed.
+- No XGBoost, dashboard, deployed API or production valuation claims.
+- Dependencies have bounded compatible ranges; these are not a fully locked environment.
+
+## Contribute
+See [CONTRIBUTING.md](CONTRIBUTING.md). Bug reports should include a small synthetic example and the command that failed.
+
+Next improvements: licensed real-world data, temporal validation, categorical location features and error analysis. These are planned, not implemented.
+
+## Development transparency
+This project is developed with AI assistance. Changes should be reviewed and tested; synthetic results should never be presented as real-world performance.
+
+## License
+MIT; see [LICENSE](LICENSE).
